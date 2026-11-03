@@ -1,8 +1,8 @@
-# Lending Portfolio Story Dashboard (Power BI + SQL)
+# Lending Portfolio Story Dashboard (Power BI + SQL + Python)
 
-A multi-page Power BI report and a set of PostgreSQL queries that turn a loan portfolio into a story: who we lend to, who comes back, who leaves, where the risk sits, and what we fail to collect. Built during a data-department internship at MNT-Halan (Cairo, 2026).
+A multi-page Power BI report, a set of PostgreSQL queries and a Python notebook that turn a loan portfolio into a story: who we lend to, who comes back, who leaves, where the risk sits, and what we fail to collect. Built during a data-department internship at MNT-Halan (Cairo, 2026).
 
-> **Demo data.** The dataset is not real: it is demo data provided during the internship. The report file and the CSVs are intentionally **not** included in this repository. Figures below describe the demo data and are not realistic benchmarks.
+> **Demo data.** The dataset is not real: it is demo data provided during the internship. The Power BI report file and the CSVs are intentionally **not** included in this repository. Figures below describe the demo data and are not realistic benchmarks.
 
 ---
 
@@ -62,13 +62,61 @@ Run these scripts on PostgreSQL with the five base tables loaded. *Dates are sto
 
 ---
 
+## 🐍 Python Analysis (pandas + Matplotlib)
+
+The same demo dataset analysed again in Python, from raw CSV files to a one-page dashboard, in a Jupyter notebook: [`python-analysis/loan_dashboard.ipynb`](python-analysis/loan_dashboard.ipynb) (an HTML copy is next to it).
+
+![Python dashboard](python-analysis/dashboard.png)
+
+### What the notebook covers
+
+| Part | Content |
+| :--- | :--- |
+| **1. Load and inspect** | Typed loading (IDs, phones and NIDs kept as text), timestamps to datetimes, value counts, missing values |
+| **2. Prepare** | New columns (month, loan total, interest rate, ticket bands) and validated merges (`validate="m:1"`, row counts checked) into one loan table and one installment table |
+| **3. Group and aggregate** | `groupby`, named aggregation, `transform`, `filter`, running totals, branch and officer scorecards |
+| **4. Pivot and reshape** | `pivot_table`, `crosstab`, `melt`, `stack` / `unstack`, conditional formatting, Excel export (`pivots.xlsx`) |
+| **5. Visualise** | Line, bar, grouped and stacked bars, histogram, box plot, scatter, donut, heatmap, small multiples |
+| **6. KPIs and dashboard** | KPI table and cards, a reusable `kpis()` function, a days-past-due chart, a one-page dashboard saved as PNG |
+
+### Key definitions
+
+| Term | Definition |
+| :--- | :--- |
+| **As-of date** | 12 August 2026 (the "today" of the dataset). The last month is partial and is excluded from the monthly charts. |
+| **Active loan** | `loan_status == "issued"` and not written off. |
+| **Collection rate** | Collected / expected, on installments due on or before the as-of date. |
+| **Days past due** | As-of date minus the due date of the loan's oldest due installment that is not fully paid. |
+| **PAR 30 / PAR 90** | Outstanding principal of active loans more than 30 / 90 days past due, divided by total active outstanding. |
+
+### Python results (demo data)
+
+| Metric | Result |
+| :--- | :--- |
+| **Collection rate** | 56.8% of what has fallen due is collected (MICRO 57.8%, CF 55.7%), the same figure as in the Power BI report. |
+| **PAR 30 / PAR 90** | 65.4% and 59.8% of active outstanding. These are high because a late loan counts with its whole remaining balance. |
+| **Geography** | Giza accounts for about 30% of principal issued. |
+
+### Running the notebook
+
+```bash
+pip install -r python-analysis/requirements.txt
+jupyter lab
+```
+
+Tested with Python 3.13. The notebook expects the five CSV files (`application.csv`, `branch.csv`, `customer.csv`, `installment.csv`, `officers.csv`) in a `data/` folder next to it, then **Kernel > Restart Kernel and Run All Cells**. The CSV files are not included in this repository.
+
+---
+
 ## ⚠️ Limits & Caveats
 
 | Limitation | Detail |
 | :--- | :--- |
 | **Hard-coded Dates** | The "as of" date (11 August 2026) is hard-coded in some queries and measures. Update it when refreshing data. |
+| **Two As-of Dates** | The Python notebook uses 12 August 2026, while the Power BI report and SQL scripts use 11 August 2026. The collection rate (56.8%) is the same in both. |
 | **Sample Size** | Branch-level rates rest on small samples (about 19 to 41 customers per branch), so treat them as a directional signal. |
 | **Synthetic Metrics** | Metrics such as PAR 90 (about 60%) are unrealistic for a real lender because the data is synthetic. |
+| **Notebook Outputs** | The notebook shows a few sample rows of the demo data (fake names, phone numbers and national IDs). The full CSV files are not included. |
 
 ---
 
@@ -76,6 +124,7 @@ Run these scripts on PostgreSQL with the five base tables loaded. *Dates are sto
 
 * **PostgreSQL:** CTEs, window functions, data aggregation
 * **Power BI:** Data modelling, interactive multi-page dashboards
+* **Python:** pandas, Matplotlib, Jupyter (analysis notebook and dashboard)
 * **Methodology:** Data storytelling, executive-ready presentation
 
 ---
